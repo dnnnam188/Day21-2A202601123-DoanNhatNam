@@ -45,11 +45,11 @@ Dán 3–5 dòng đầu của đoạn được tính loss:
 
 | Run | target | regression | format | latency (ms) |
 |---|---|---|---|---|
-| (a) base + naive prompt | 0.0000 | 0.7500 | 0.0000 | 3331.2 |
-| (b) base + optimized prompt | 0.6875 | 0.7500 | 1.0000 | 1056.6 |
-| (c) LoRA fine-tune | 0.9375 | 0.6250 | 1.0000 | 1558.7 |
+| (a) base + naive prompt | 0.0000 | 0.7578 | 0.0000 | 3125.0 |
+| (b) base + optimized prompt | 0.7650 | 0.7578 | 1.0000 | 998.8 |
+| (c) LoRA fine-tune | 0.9650 | 0.6111 | 1.0000 | 1403.9 |
 
-**(b) có thật sự mạnh hơn (a) không?** `có` — Baseline (b) vượt trội hoàn toàn so với (a): Target tăng từ 0.0% lên 68.75%, tỷ lệ Format JSON hợp lệ tăng từ 0.0% lên 100.0%, đồng thời Latency giảm hơn 3 lần (từ 3331.2 ms xuống 1056.6 ms) nhờ cấu trúc prompt rõ ràng giúp mô hình không sinh văn bản thừa.
+**(b) có thật sự mạnh hơn (a) không?** `có` — Baseline (b) vượt trội hoàn toàn so với (a): Target tăng từ 0.0% lên 76.50%, tỷ lệ Format JSON hợp lệ tăng từ 0.0% lên 100.0%, đồng thời Latency giảm hơn 3 lần (từ 3125.0 ms xuống 998.8 ms) nhờ cấu trúc prompt rõ ràng giúp mô hình không sinh văn bản thừa.
 Bạn có sửa `OPTIMIZED_PROMPT` không? Nếu có: **làm mạnh lên hay yếu đi**, và vì sao?
 Tôi giữ nguyên bản `OPTIMIZED_PROMPT` chuẩn của labkit (khớp SHA `719e74d3b6232053`), đảm bảo tính liêm chính và khách quan khi so sánh với bản fine-tune.
 
@@ -59,10 +59,10 @@ Tôi giữ nguyên bản `OPTIMIZED_PROMPT` chuẩn của labkit (khớp SHA `71
 
 | Run | vị trí | r | trainable | LR | train loss (NB4) | **target (NB5 §4)** | s | VRAM GB |
 |---|---|---|---|---|---|---|---|---|
-| `correct` | text-linear | 16 | 32,464,896 | 0.0001 | 0.6261 | 0.9375 | 962.8 | 12.01 |
-| `attn_only` | q,v | 283 *(matched)* | 32,456,704 | 0.0001 | 0.5368 | 0.9375 | 808.1 | 12.02 |
-| `wrong_lr` | text-linear | 16 | 32,464,896 | 1e-05 | 1.5704 | 0.0000 | 936.5 | 12.01 |
-| `qlora` | text-linear | 16 | 32,464,896 | 0.0001 | 0.7058 | 0.8438 | 994.2 | 7.09 |
+| `correct` | text-linear | 16 | 32,464,896 | 0.0001 | 0.6288 | 0.9650 | 954.2 | 12.01 |
+| `attn_only` | q,v | 283 *(matched)* | 32,456,704 | 0.0001 | 0.5378 | 0.9700 | 781.3 | 12.02 |
+| `wrong_lr` | text-linear | 16 | 32,464,896 | 1e-05 | 1.5704 | 0.0000 | 911.3 | 12.01 |
+| `qlora` | text-linear | 16 | 32,464,896 | 0.0001 | 0.7058 | 0.9400 | 985.5 | 7.09 |
 
 > Xếp hạng bằng cột **target**, không bằng cột train loss — chấm bằng chỉ số thay thế
 > chính là Lỗi #3. Nếu hai cột cho hai thứ tự khác nhau, nói thẳng điều đó ở 4.1: đó là
@@ -73,28 +73,28 @@ Trả lời ba câu (mỗi câu ≥3 câu văn):
 **4.1 — `attn_only` có cùng số tham số huấn luyện với `correct`. Trên tập target nó
 thắng, thua, hay hoà? Thứ tự đó có giống thứ tự theo train loss không? Điều đó nói gì về
 *rank* so với *vị trí gắn adapter*?**
-Trên tập target, `attn_only` đạt độ chính xác 0.9375 (hoà với `correct`). Tuy nhiên, trên tập huấn luyện, train loss của `attn_only` lại đạt mức 0.5368, thấp hơn đáng kể so với 0.6261 của `correct`. Thứ tự theo train loss (`attn_only` < `correct`) hoàn toàn đảo ngược so với kết quả đánh giá thực tế downstream task. Điều này chứng minh rằng việc cố tình tăng rank cực đại ($r=283$) chỉ trên các khối attention chỉ giúp mô hình ghi nhớ/overfit dữ liệu huấn luyện nhanh hơn chứ không mang lại khả năng tổng quát hóa vượt trội so với việc phân bổ adapter dàn đều trên toàn bộ các lớp `text-linear` với rank nhỏ ($r=16$). Đòn bẩy thực sự nằm ở *vị trí gắn adapter* (all-linear coverage) chứ không phải ở việc đẩy *rank* lên thật cao tại một vài vị trí cục bộ.
+Trên tập target 50 mẫu, `attn_only` đạt độ chính xác 0.9700 (97.0%), nhỉnh hơn một chút so với 0.9650 (96.5%) của `correct` (chênh lệch đúng 1 trường trên toàn bộ tập test). Tuy nhiên, trên tập huấn luyện, train loss của `attn_only` lại đạt mức 0.5378, thấp hơn đáng kể so với 0.6288 của `correct`. Thứ tự theo train loss tạo ra cảm giác `attn_only` vượt trội rất nhiều, nhưng thực tế downstream target cho thấy sự tương đồng cao và có dấu hiệu overfit nhẹ trên train set khi đẩy rank lên cực đại $r=283$. Điều này chứng minh rằng việc tăng rank cực lớn trên các khối attention chỉ giúp mô hình khớp nhanh dữ liệu huấn luyện cục bộ chứ không đem lại đòn bẩy vượt trội về mặt biểu diễn ngôn ngữ tổng thể. Đòn bẩy bền vững và cân bằng nhất chính là *vị trí gắn adapter* (all-linear coverage) với rank vừa phải ($r=16$).
 
 **4.2 — `wrong_lr` chỉ khác đúng một con số. Đường loss khác nhau ra sao? Nếu chỉ nhìn
 loss mà không biết LR, bạn sẽ kết luận sai điều gì?**
-Cấu hình `wrong_lr` sử dụng learning rate $1\times 10^{-5}$ (thang đo của Full Fine-tuning) thay vì $1\times 10^{-4}$ (chuẩn LoRA). Kết quả là train loss hầu như không hội tụ, kết thúc ở mức rất cao 1.5704 (so với 0.6261 của `correct`) và độ chính xác target hoàn toàn bằng 0.0000. Nếu chỉ quan sát đường loss đi ngang mà không nắm được thông tin về Learning Rate, người làm rất dễ rơi vào kết luận sai lầm rằng "kỹ thuật LoRA không hiệu quả với bài toán này", "mô hình base không đủ năng lực", hoặc "tập dữ liệu bị nhiễu/thiếu hụt nghiêm trọng". Trên thực tế, adapter LoRA chỉ cập nhật một phần nhỏ tham số nên đòi hỏi mức learning rate lớn hơn gấp 5–10 lần so với full fine-tune để gradient có thể di chuyển hiệu quả trong không gian tham số rank thấp.
+Cấu hình `wrong_lr` sử dụng learning rate $1\times 10^{-5}$ (thang đo của Full Fine-tuning) thay vì $1\times 10^{-4}$ (chuẩn LoRA). Kết quả là train loss hầu như không hội tụ, kết thúc ở mức rất cao 1.5704 (so với 0.6288 của `correct`) và độ chính xác target hoàn toàn bằng 0.0000 do mô hình không học được cách xuất đúng format JSON theo yêu cầu. Nếu chỉ quan sát đường loss đi ngang mà không nắm được thông tin về Learning Rate, người làm rất dễ rơi vào kết luận sai lầm rằng "kỹ thuật LoRA không hiệu quả với bài toán này", "mô hình base không đủ năng lực", hoặc "tập dữ liệu bị nhiễu/thiếu hụt nghiêm trọng". Trên thực tế, adapter LoRA chỉ cập nhật một phần nhỏ tham số nên đòi hỏi mức learning rate lớn hơn gấp 5–10 lần so với full fine-tune để gradient có thể di chuyển hiệu quả trong không gian tham số rank thấp.
 
 **4.3 — `qlora` tiết kiệm bao nhiêu VRAM, trả giá bằng gì? Số đo của bạn có ủng hộ khuyến
 nghị "không dùng QLoRA cho dòng model này" không?**
-Cấu hình `qlora` (4-bit quantization) giúp giảm mức chiếm dụng bộ nhớ VRAM đỉnh từ 12.01 GB xuống còn 7.09 GB (tiết kiệm khoảng 41% VRAM, tương đương ~4.92 GB). Tuy nhiên, cái giá phải trả là độ chính xác target bị tụt giảm nghiêm trọng từ 0.9375 xuống còn 0.8438 (mất 9.37% accuracy), thời gian huấn luyện tăng nhẹ (994.2s so với 962.8s) do overhead dequantization, và latency suy luận cũng tăng từ 1558.7 ms lên 1768.7 ms. Số đo thực nghiệm này hoàn toàn ủng hộ khuyến cáo kỹ thuật của nhà phát triển Qwen3.5: nếu tài nguyên phần cứng (như GPU T4 16GB) đã đủ khả năng chạy ở độ chính xác 16-bit (`fp16`/`bf16`), tuyệt đối không nên lạm dụng 4-bit QLoRA vì sai số lượng tử hóa sẽ làm suy giảm trực tiếp năng lực phân loại chi tiết của mô hình.
+Cấu hình `qlora` (4-bit quantization) giúp giảm mức chiếm dụng bộ nhớ VRAM đỉnh từ 12.01 GB xuống còn 7.09 GB (tiết kiệm khoảng 41% VRAM, tương đương ~4.92 GB). Tuy nhiên, cái giá phải trả là độ chính xác target bị tụt giảm từ 0.9650 xuống còn 0.9400 (mất 2.5% accuracy), thời gian huấn luyện tăng lên 985.5s (so với 954.2s của `correct`) do chi phí dequantization on-the-fly, và latency suy luận cũng tăng từ 1403.9 ms lên 1776.8 ms. Số đo thực nghiệm này hoàn toàn ủng hộ khuyến cáo kỹ thuật của nhà phát triển Qwen3.5: nếu tài nguyên phần cứng (như GPU T4 16GB) đã đủ khả năng chạy ở độ chính xác 16-bit (`fp16`/`bf16`), tuyệt đối không nên lạm dụng 4-bit QLoRA vì sai số lượng tử hóa sẽ làm suy giảm trực tiếp năng lực phân loại chi tiết của mô hình.
 
 ---
 
 ## 5. Phán quyết (NB5)
 
 **Kết quả cổng hồi quy**: `FAILED`
-`target Δ = +0.2500` · `regression Δ = -0.1250` · `valid_trace_rate = 0.0`
+`target Δ = +0.2000` · `regression Δ = -0.1467` · `valid_trace_rate = 0.0`
 
 Diễn giải (≥100 từ). Nếu FAILED: **vì sao**, và điều đó nói gì về bài toán của bạn?
 (Một FAILED được phân tích tốt ăn điểm cao hơn một PASSED không giải thích được.)
-Kết quả cổng hồi quy đạt trạng thái FAILED do chỉ số suy giảm năng lực tổng quát `regression_delta` là -0.1250 (-12.5%), vượt quá ngưỡng dung sai cho phép là 0.0200 (2.0%), mặc dù hiệu năng trên tác vụ mục tiêu tăng trưởng rất mạnh (`target_delta = +0.2500`, đưa target từ 0.6875 ở prompt b lên 0.9375 ở fine-tune). 
+Kết quả cổng hồi quy đạt trạng thái FAILED do chỉ số suy giảm năng lực tổng quát `regression_delta` là -0.1467 (-14.67%), vượt quá ngưỡng dung sai cho phép là 0.0200 (2.0%), mặc dù hiệu năng trên tác vụ mục tiêu tăng trưởng rất mạnh (`target_delta = +0.2000`, đưa target từ 0.7650 ở prompt b lên 0.9650 ở fine-tune). 
 
-Nguyên nhân cốt lõi dẫn đến hiện tượng này là **Catastrophic Forgetting (Quên thảm họa)**. Trong quá trình huấn luyện 30 steps, toàn bộ 200 mẫu trong tập train đều là ticket CSKH thuần túy về phân loại khiếu nại đơn hàng. Mô hình đã điều chỉnh trọng số adapter tập trung tối đa vào cấu trúc JSON và phân loại 4 nhãn, dẫn đến việc làm xáo trộn các biểu diễn tri thức tổng quát sẵn có trong base model khi đối mặt với 15 câu hỏi thường thức ở tập `eval_regression`. 
+Nguyên nhân cốt lõi dẫn đến hiện tượng này là **Catastrophic Forgetting (Quên thảm họa)**. Trong quá trình huấn luyện 30 steps, toàn bộ 200 mẫu trong tập train đều là ticket CSKH thuần túy về phân loại khiếu nại đơn hàng. Mô hình đã điều chỉnh toàn bộ trọng số adapter tập trung tối đa vào cấu trúc JSON và phân loại 4 nhãn, dẫn đến việc làm xáo trộn các biểu diễn tri thức tổng quát sẵn có trong base model khi đối mặt với 15 câu hỏi thường thức ở tập `eval_regression`. 
 
 Để khắc phục hiện tượng này trước khi đưa vào sản xuất thực tế, giải pháp bắt buộc theo khuyến nghị kỹ thuật (deck §14.3) là phải áp dụng chiến lược **Replay Buffer**: phối trộn thêm từ 1% đến 5% dữ liệu đa miền / kiến thức phổ thông (general domain instructions) vào tập huấn luyện nhằm duy trì và bảo vệ năng lực suy luận nền tảng của mô hình.
 
@@ -119,17 +119,17 @@ Có mẫu chung nào ở các ca FT thua không?
 
 **Kết luận (≥150 từ).** Bạn có nên deploy bản fine-tune này không, và vì sao? Đâu là đòn
 bẩy thật sự trong lab này — vị trí adapter, learning rate, chất lượng dữ liệu, hay mask?
-Dựa trên kết quả thực nghiệm toàn diện, kết luận kỹ thuật là: **Hiện tại CHƯA NÊN triển khai (deploy) bản fine-tune này trực tiếp vào hệ thống sản xuất**, mặc dù độ chính xác trên tác vụ phân loại ticket CSKH đạt mức ấn tượng 93.75% (vượt trội so với 68.75% của Prompting). Lý do then chốt là mô hình đã vi phạm cổng hồi quy an toàn (`regression_delta = -0.1250`), làm suy giảm nghiêm trọng năng lực xử lý ngôn ngữ và tri thức tổng quát. Nếu đưa vào vận hành thực tế, mô hình có nguy cơ phản hồi sai lệch nghiêm trọng đối với các tình huống ngoài phân phối (OOD) hoặc các câu hỏi tư vấn tổng quát từ khách hàng.
+Dựa trên kết quả thực nghiệm toàn diện trên toàn bộ tập đánh giá (50 mẫu target, 15 mẫu regression), kết luận kỹ thuật là: **Hiện tại CHƯA NÊN triển khai (deploy) bản fine-tune này trực tiếp vào hệ thống sản xuất**, mặc dù độ chính xác trên tác vụ phân loại ticket CSKH đạt mức ấn tượng 96.50% (vượt trội so với 76.50% của Prompting). Lý do then chốt là mô hình đã vi phạm cổng hồi quy an toàn (`regression_delta = -0.1467`), làm suy giảm nghiêm trọng năng lực xử lý ngôn ngữ và tri thức tổng quát. Nếu đưa vào vận hành thực tế, mô hình có nguy cơ phản hồi sai lệch nghiêm trọng đối với các tình huống ngoài phân phối (OOD) hoặc các câu hỏi tư vấn tổng quát từ khách hàng.
 
 Phân tích sâu về các biến số thực nghiệm chỉ ra rằng: Đòn bẩy quyết định sự thành bại trong lab này chính là **Loss Masking (`assistant-only`) kết hợp với Learning Rate thang LoRA ($10^{-4}$)**. Nếu không có Loss Masking đúng, mô hình sẽ học vẹt prompt; nếu chọn sai Learning Rate (`wrong_lr`), mô hình hoàn toàn bất động. Ngược lại, việc cố gắng nâng rank cục bộ (`attn_only`) hay lượng tử hóa ép bộ nhớ (`qlora`) chỉ đem lại ảo tưởng về train loss hoặc đánh đổi trực tiếp bằng độ chính xác. Để đưa mô hình vào triển khai an toàn, bước tiếp theo bắt buộc là tái huấn luyện với 1% đến 5% tập dữ liệu replay tổng quát.
 
 **Ba điều tôi học được** (cụ thể, không generic):
-1. **Train Loss là một chỉ số đánh lừa (Deceptive Metric)**: Cấu hình `attn_only` đạt train loss thấp nhất (0.5368 so với 0.6261 của `correct`), nhưng điểm downstream target không hề vượt trội. Tuyệt đối không dùng train loss làm thước đo quyết định chất lượng mô hình.
+1. **Train Loss là một chỉ số đánh lừa (Deceptive Metric)**: Cấu hình `attn_only` đạt train loss thấp nhất (0.5378 so với 0.6288 của `correct`), nhưng điểm downstream target không hề vượt trội (97.0% vs 96.5%). Tuyệt đối không dùng train loss làm thước đo quyết định chất lượng mô hình.
 2. **Loss Masking là điều kiện sống còn của Instruction Tuning**: Cần phải kiểm chứng bằng mã nguồn (`mask_proof.json`) giải mã ngược token để chứng minh chỉ câu trả lời được tính loss ($41.49\%$), loại bỏ $100\%$ token prompt khỏi gradient update.
 3. **Prompt Engineering là mốc chuẩn (Baseline) bắt buộc phải đo trước**: Nếu không đo Baseline (b) trước, ta không thể biết liệu mức tăng điểm của Fine-tune có thực sự xứng đáng với chi phí huấn luyện và nguy cơ Catastrophic Forgetting hay không.
 
 **Nếu có thêm 2 giờ nữa, tôi sẽ thử:**
-Tôi sẽ tạo một tập dữ liệu trộn (Replay Buffer) bằng cách bổ sung 3% mẫu câu hỏi hội thoại đa lĩnh vực (General Vietnamese QA) vào tập `train_seed.jsonl` và chạy lại NB3 + NB5 để kiểm chứng xem liệu mô hình có vừa đạt target $\ge 93\%$ vừa vượt qua cổng hồi quy an toàn (`regression_delta \ge -0.02`) hay không.
+Tôi sẽ tạo một tập dữ liệu trộn (Replay Buffer) bằng cách bổ sung 3% mẫu câu hỏi hội thoại đa lĩnh vực (General Vietnamese QA) vào tập `train_seed.jsonl` và chạy lại NB3 + NB5 để kiểm chứng xem liệu mô hình có vừa đạt target $\ge 96\%$ vừa vượt qua cổng hồi quy an toàn (`regression_delta \ge -0.02`) hay không.
 
 ---
 
